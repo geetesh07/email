@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Email Intelligence Report</title>
+<style>
+  :root {
+    --primary: #1a3c6e;
+    --accent: #2d7dd2;
+    --danger: #cc3333;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #2d3748;
+    --muted: #718096;
+    --border: #e2e8f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    color: var(--primary);
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 3px solid var(--accent);
+  }
+  .section {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  .section h2 {
+    color: var(--primary);
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent);
+    cursor: pointer;
+    user-select: none;
+  }
+  .section h2::before {
+    content: '▼ ';
+    font-size: 0.8rem;
+    color: var(--accent);
+  }
+  .section h2.collapsed::before { content: '► '; }
+  .collapsible { transition: max-height 0.3s ease; overflow: hidden; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  th {
+    background: var(--primary);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) { background: #f8fafc; }
+  tr:hover { background: #edf2f7; }
+  .sentence-card {
+    padding: 0.8rem 1rem;
+    margin: 0.5rem 0;
+    border-left: 4px solid var(--accent);
+    background: #f8fafc;
+    border-radius: 0 8px 8px 0;
+  }
+  .sentence-card.unresolved {
+    border-left-color: var(--danger);
+    background: #fff5f5;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+  .keywords {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 4px;
+  }
+  .badge-unresolved {
+    background: var(--danger);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+  .empty { color: var(--muted); font-style: italic; }
+  .stats {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    flex: 1;
+    min-width: 120px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  .stat-card .number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-card .label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Engineering Email Intelligence Report</h1>
+<div class="stats">
+<div class="stat-card"><div class="number">4</div><div class="label">People</div></div>
+<div class="stat-card"><div class="number">57</div><div class="label">Specs</div></div>
+<div class="stat-card"><div class="number">51</div><div class="label">Sentences</div></div>
+<div class="stat-card"><div class="number">12</div><div class="label">Open Items</div></div>
+</div>
+<div class="section">
+<h2>People Involved</h2>
+<div class="collapsible">
+<table><tr><th>Name</th><th>Email</th><th>Company</th><th>Role</th></tr>
+<tr><td>Raj Mehta</td><td>raj@clientco.com</td><td>Clientco</td><td>Mechanical Engineer</td></tr>
+<tr><td>Sanjay K.</td><td>sanjay@yourco.com</td><td>Yourco</td><td></td></tr>
+<tr><td>Priya N.</td><td>priya@yourco.com</td><td>Yourco</td><td></td></tr>
+<tr><td>Amit Shah</td><td>amit@clientco.com</td><td>Clientco</td><td></td></tr>
+</table>
+</div></div>
+<div class="section">
+<h2>Extracted Specifications</h2>
+<div class="collapsible">
+<table><tr><th>Category</th><th>Value</th><th>Unit</th><th>Mentioned By</th><th>Date</th></tr>
+<tr><td>Dimensions</td><td>42</td><td>mm</td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Torque</td><td>450</td><td>Nm</td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Speed/RPM</td><td>1450</td><td>RPM</td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Speed/RPM</td><td>120</td><td>RPM</td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Power</td><td>7.5</td><td>kW</td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Standards</td><td>IP55</td><td></td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Standards</td><td>IS 325</td><td></td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Standards</td><td>EN8</td><td></td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>IP Rating</td><td>IP55</td><td></td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Material</td><td>EN8</td><td></td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Material</td><td>cast iron</td><td></td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Material</td><td>hardened</td><td></td><td>Raj Mehta</td><td>Mar 03</td></tr>
+<tr><td>Dimensions</td><td>42</td><td>mm</td><td>Sanjay K.</td><td>Mar 04</td></tr>
+<tr><td>Torque</td><td>500</td><td>Nm</td><td>Sanjay K.</td><td>Mar 04</td></tr>
+<tr><td>Speed/RPM</td><td>1450</td><td>RPM</td><td>Sanjay K.</td><td>Mar 04</td></tr>
+<tr><td>Weight/Mass</td><td>85</td><td>kg</td><td>Sanjay K.</td><td>Mar 04</td></tr>
+<tr><td>Dimensions</td><td>42</td><td>mm</td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Dimensions</td><td>28</td><td>mm</td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Dimensions</td><td>1.5</td><td>m</td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Dimensions</td><td>0.05</td><td>mm</td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Pressure</td><td>2.5</td><td>bar</td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Voltage</td><td>415</td><td>VAC</td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Current</td><td>15</td><td>A</td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Thread/Bolt</td><td>M16</td><td></td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Standards</td><td>is 28</td><td></td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Standards</td><td>is 1</td><td></td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Standards</td><td>EN8</td><td></td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Material</td><td>EN8</td><td></td><td>Raj Mehta</td><td>Mar 05</td></tr>
+<tr><td>Dimensions</td><td>450</td><td>m</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Dimensions</td><td>42</td><td>mm</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Dimensions</td><td>28</td><td>mm</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Dimensions</td><td>0.05</td><td>mm</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Dimensions</td><td>580</td><td>mm</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Dimensions</td><td>420</td><td>mm</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Dimensions</td><td>380</td><td>mm</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Torque</td><td>450</td><td>Nm</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Weight/Mass</td><td>260</td><td>g</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Weight/Mass</td><td>92</td><td>kg</td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Thread/Bolt</td><td>M16</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Standards</td><td>EN8</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Standards</td><td>EN19</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Standards</td><td>IP55</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>IP Rating</td><td>IP55</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Efficiency Class</td><td>IE2</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Efficiency Class</td><td>IE3</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Material</td><td>EN8</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Material</td><td>EN19</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Material</td><td>cast iron</td><td></td><td>Priya N.</td><td>Mar 07</td></tr>
+<tr><td>Dimensions</td><td>3</td><td>m</td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Torque</td><td>450</td><td>Nm</td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Standards</td><td>IS 12615</td><td></td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Standards</td><td>EN19</td><td></td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Standards</td><td>is 85</td><td></td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Standards</td><td>ISO 6336</td><td></td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Standards</td><td>ASTM A388</td><td></td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Efficiency Class</td><td>IE3</td><td></td><td>Raj Mehta</td><td>Mar 09</td></tr>
+<tr><td>Material</td><td>EN19</td><td></td><td>Raj Mehta</td><td>Mar 09</td></tr>
+</table>
+</div></div>
+<div class="section">
+<h2>Engineering-Relevant Sentences</h2>
+<div class="collapsible">
+<div class="sentence-card">
+<span class="keywords">gearbox</span>
+<p>We need a helical gearbox for our conveyor application.</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">torque</span>
+<span class="keywords">rated</span>
+<p>Rated torque: 450 Nm</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">RPM</span>
+<span class="keywords">speed</span>
+<p>Input speed: 1450 RPM</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">RPM</span>
+<span class="keywords">speed</span>
+<p>Output speed: approximately 120 RPM</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">power</span>
+<p>Motor power: 7.5 kW</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">temperature</span>
+<span class="keywords">ambient</span>
+<p>Ambient temperature: 55�C max</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">IP rating</span>
+<p>IP rating: IP55</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">gearbox</span>
+<span class="keywords">standard</span>
+<p>The gearbox should comply with IS 325 standard.</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">mounting</span>
+<span class="keywords">flange</span>
+<p>We prefer the mounting type to be flange B5.</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">material</span>
+<p>Material for the housing should be cast iron and the gears should be in EN8 or equivalent hardened steel.</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">diameter</span>
+<span class="keywords">shaft</span>
+<p>Can you also confirm the shaft diameter?</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">bore</span>
+<p>We estimate around 42mm bore size.</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">diameter</span>
+<span class="keywords">shaft</span>
+<p>The 42mm shaft diameter \u2014 is this for the input or output shaft?</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">shaft</span>
+<p>Do you need a hollow shaft option?</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">torque</span>
+<span class="keywords">RPM</span>
+<span class="keywords">rated</span>
+<span class="keywords">standard</span>
+<p>We have a standard model HG-450 that delivers 500 Nm rated torque at 1450 RPM input.</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">weight</span>
+<p>Weight is approximately 85 kg.</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">temperature</span>
+<p>Operating temperature range is -10�C to 65�C.</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">diameter</span>
+<span class="keywords">shaft</span>
+<p>The 42mm is the output shaft diameter.</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">shaft</span>
+<p>Input shaft is 28mm.</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">shaft</span>
+<p>No hollow shaft needed \u2014 solid shaft is fine.</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">shaft</span>
+<span class="keywords">tolerance</span>
+<p>- Shaft tolerance: �0.05mm</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">coupling</span>
+<p>- Coupling type: flexible jaw coupling</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">mounting</span>
+<span class="keywords">bolt</span>
+<p>- Bolt size for mounting: M16 � 1.5</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">pressure</span>
+<span class="keywords">lubrication</span>
+<p>- Operating pressure for lubrication system: 2.5 bar</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">voltage</span>
+<p>- Voltage for motor: 415 VAC, 3-phase</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">load</span>
+<span class="keywords">current</span>
+<p>- Current draw: 15 A at full load</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">shaft</span>
+<p>Can you confirm if the shaft needs to be stainless or EN8 will work?</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">delivery</span>
+<p>We need delivery within 6 weeks.</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">drawing</span>
+<span class="keywords">revision</span>
+<p>Drawing revision to be approved before manufacturing.</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">torque</span>
+<p>Torque: 450 Nm at output \u2014 our HG-450 model handles this with 10% margin.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">speed</span>
+<span class="keywords">gearbox</span>
+<p>Speed ratio: 1450/120 = 12.08:1 \u2014 we will use a 12:1 ratio gearbox.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">shaft</span>
+<span class="keywords">standard</span>
+<p>Shaft: 42mm output, 28mm input \u2014 standard sizes, no issue.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">shaft</span>
+<span class="keywords">tolerance</span>
+<p>Tolerance �0.05mm on output shaft \u2014 achievable with our CNC grinding process.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">mounting</span>
+<span class="keywords">flange</span>
+<span class="keywords">bolt</span>
+<p>Mounting: Flange B5 with M16 bolts \u2014 confirmed.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">material</span>
+<p>Material recommendation:</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">shaft</span>
+<p>- Output shaft: EN19 (better fatigue strength than EN8 for this application)</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">efficiency</span>
+<p>TBD - efficiency class IE2 or IE3.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">seal</span>
+<p>Regarding the IP55 protection, we will use double lip seals and a breather valve.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">weight</span>
+<p>Weight of complete assembly: 92 kg (with oil fill).</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">speed</span>
+<span class="keywords">rated</span>
+<p>Noise level: less than 75 dB at rated speed.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">dimension</span>
+<span class="keywords">drawing</span>
+<p>I will prepare the GA drawing with dimensions 580mm � 420mm � 380mm (L�W�H).</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">standard</span>
+<p>Please confirm the paint shade \u2014 RAL 7035 (light grey) is our standard.</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">efficiency</span>
+<p>Efficiency class: Go with IE3 for the motor.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">standard</span>
+<p>Our plant standard requires IE3 minimum per IS 12615.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">material</span>
+<span class="keywords">shaft</span>
+<p>Material: EN19 for the shaft is acceptable.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">hardness</span>
+<p>Please ensure hardness is minimum 280 BHN.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">thread</span>
+<p>I&#x27;m adding Amit Shah (our purchase head) to this thread for the commercial discussion.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">shaft</span>
+<p>One more thing \u2014 we need a test certificate as per ISO 6336 for the gears and ASTM A388 for the shaft ultrasonic testing.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="keywords">lubrication</span>
+<p>Need to check with our maintenance team if they need any special lubrication port positioning.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">approval</span>
+<span class="keywords">delivery</span>
+<span class="keywords">drawing</span>
+<p>Final delivery should be within 6 weeks from drawing approval.</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card">
+<span class="keywords">torque</span>
+<span class="keywords">gearbox</span>
+<p>Gearbox Requirement - 450 Nm Torque</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+</div></div>
+<div class="section">
+<h2>Open / Unconfirmed Items</h2>
+<div class="collapsible">
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Can you also confirm the shaft diameter?"</p>
+<div class="meta">— Raj Mehta | Mar 03</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"The 42mm shaft diameter \u2014 is this for the input or output shaft?"</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Do you need a hollow shaft option?"</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"What is the service factor you are designing for?"</p>
+<div class="meta">— Sanjay K. | Mar 04</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Can you confirm if the shaft needs to be stainless or EN8 will work?"</p>
+<div class="meta">— Raj Mehta | Mar 05</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Mounting: Flange B5 with M16 bolts \u2014 confirmed."</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"TBD - efficiency class IE2 or IE3."</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Please confirm which one you need for the motor."</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Please confirm the paint shade \u2014 RAL 7035 (light grey) is our standard."</p>
+<div class="meta">— Priya N. | Mar 07</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Need to check with our maintenance team if they need any special lubrication port positioning."</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Will confirm by Wednesday."</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+<div class="sentence-card unresolved">
+<span class="badge-unresolved">OPEN</span>
+<p>"Please confirm if this timeline works."</p>
+<div class="meta">— Raj Mehta | Mar 09</div>
+</div>
+</div></div>
+<div class="section">
+<h2>Timeline</h2>
+<div class="collapsible">
+<table><tr><th>Date</th><th>Event / Sentence</th><th>Mentioned By</th></tr>
+<tr><td>Mar 03</td><td>[Dimensions] 42mm</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Torque] 450 Nm</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Speed/RPM] 1450 RPM</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Speed/RPM] 120 RPM</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Power] 7.5 kW</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Standards] IP55</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Standards] IS 325</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Standards] EN8</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[IP Rating] IP55</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Material] EN8</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Material] cast iron</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>[Material] hardened</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 03</td><td>Can you also confirm the shaft diameter?</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 04</td><td>[Dimensions] 42mm</td><td>Sanjay K.</td></tr>
+<tr><td>Mar 04</td><td>[Torque] 500 Nm</td><td>Sanjay K.</td></tr>
+<tr><td>Mar 04</td><td>[Speed/RPM] 1450 RPM</td><td>Sanjay K.</td></tr>
+<tr><td>Mar 04</td><td>[Weight/Mass] 85 kg</td><td>Sanjay K.</td></tr>
+<tr><td>Mar 04</td><td>The 42mm shaft diameter \u2014 is this for the input or output shaft?</td><td>Sanjay K.</td></tr>
+<tr><td>Mar 04</td><td>Do you need a hollow shaft option?</td><td>Sanjay K.</td></tr>
+<tr><td>Mar 05</td><td>[Dimensions] 42mm</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Dimensions] 28mm</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Dimensions] 1.5 m</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Dimensions] 0.05mm</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Pressure] 2.5 bar</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Voltage] 415 VAC</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Current] 15 A</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Thread/Bolt] M16</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Standards] is 28</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Standards] is 1</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Standards] EN8</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>[Material] EN8</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 05</td><td>Can you confirm if the shaft needs to be stainless or EN8 will work?</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 07</td><td>[Dimensions] 450 m</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Dimensions] 42mm</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Dimensions] 28mm</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Dimensions] 0.05mm</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Dimensions] 580mm</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Dimensions] 420mm</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Dimensions] 380mm</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Torque] 450 Nm</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Weight/Mass] 260 g</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Weight/Mass] 92 kg</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Thread/Bolt] M16</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Standards] EN8</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Standards] EN19</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Standards] IP55</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[IP Rating] IP55</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Efficiency Class] IE2</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Efficiency Class] IE3</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Material] EN8</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Material] EN19</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>[Material] cast iron</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>Mounting: Flange B5 with M16 bolts \u2014 confirmed.</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>TBD - efficiency class IE2 or IE3.</td><td>Priya N.</td></tr>
+<tr><td>Mar 07</td><td>Please confirm the paint shade \u2014 RAL 7035 (light grey) is our standard.</td><td>Priya N.</td></tr>
+<tr><td>Mar 09</td><td>[Dimensions] 3 m</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Torque] 450 Nm</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Standards] IS 12615</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Standards] EN19</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Standards] is 85</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Standards] ISO 6336</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Standards] ASTM A388</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Efficiency Class] IE3</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>[Material] EN19</td><td>Raj Mehta</td></tr>
+<tr><td>Mar 09</td><td>Need to check with our maintenance team if they need any special lubrication port positioning.</td><td>Raj Mehta</td></tr>
+</table>
+</div></div>
+
+</div>
+<script>
+document.querySelectorAll('.section h2').forEach(h => {
+  h.addEventListener('click', () => {
+    const content = h.nextElementSibling;
+    if (content.style.maxHeight) {
+      content.style.maxHeight = null;
+      h.classList.remove('collapsed');
+    } else {
+      content.style.maxHeight = '0';
+      h.classList.add('collapsed');
+    }
+  });
+});
+</script>
+</body>
+</html>

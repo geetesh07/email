@@ -1,0 +1,34 @@
+From: Raj Mehta <raj@clientco.com>
+To: Sanjay K. <sanjay@yourco.com>
+Cc: Priya N. <priya@yourco.com>
+Date: Thu, 05 Mar 2026 09:45:00 +0530
+Subject: Re: Re: Gearbox Requirement - 450 Nm Torque
+Message-ID: <msg003@clientco.com>
+In-Reply-To: <msg002@yourco.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hi Sanjay,
+
+Thanks for the quick response. Answers below:
+
+1. The 42mm is the output shaft diameter. Input shaft is 28mm.
+2. No hollow shaft needed — solid shaft is fine.
+3. Service factor is 1.5 minimum.
+
+Some additional specifications:
+- Shaft tolerance: ±0.05mm
+- Coupling type: flexible jaw coupling
+- Bolt size for mounting: M16 × 1.5
+- Operating pressure for lubrication system: 2.5 bar
+- Voltage for motor: 415 VAC, 3-phase
+- Current draw: 15 A at full load
+
+Can you confirm if the shaft needs to be stainless or EN8 will work?
+
+We need delivery within 6 weeks. Drawing revision to be approved before manufacturing.
+
+Regards,
+Raj Mehta
+Mechanical Engineer
+ClientCo Industries Pvt. Ltd.

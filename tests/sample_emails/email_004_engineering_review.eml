@@ -1,0 +1,41 @@
+From: Priya N. <priya@yourco.com>
+To: Raj Mehta <raj@clientco.com>
+Cc: Sanjay K. <sanjay@yourco.com>
+Date: Sat, 07 Mar 2026 11:20:00 +0530
+Subject: Re: Gearbox Requirement - Engineering Review
+Message-ID: <msg004@yourco.com>
+In-Reply-To: <msg003@clientco.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Hi Raj,
+
+I have reviewed the requirements. Here is my engineering assessment:
+
+1. Torque: 450 Nm at output — our HG-450 model handles this with 10% margin.
+2. Speed ratio: 1450/120 = 12.08:1 — we will use a 12:1 ratio gearbox.
+3. Shaft: 42mm output, 28mm input — standard sizes, no issue.
+4. Tolerance ±0.05mm on output shaft — achievable with our CNC grinding process.
+5. Mounting: Flange B5 with M16 bolts — confirmed.
+
+Material recommendation:
+- Housing: Cast iron (FG260 grade)
+- Gears: EN8 with case hardening to 58 HRC
+- Output shaft: EN19 (better fatigue strength than EN8 for this application)
+
+TBD - efficiency class IE2 or IE3. Please confirm which one you need for the motor.
+
+Regarding the IP55 protection, we will use double lip seals and a breather valve.
+
+Weight of complete assembly: 92 kg (with oil fill).
+Noise level: less than 75 dB at rated speed.
+
+I will prepare the GA drawing with dimensions 580mm × 420mm × 380mm (L×W×H). Expected to share by next week.
+
+Please confirm the paint shade — RAL 7035 (light grey) is our standard. Let me know if you need a different shade.
+
+Best regards,
+Priya N.
+Senior Design Engineer
+YourCo Gear Solutions
+priya@yourco.com
