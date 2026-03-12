@@ -14,6 +14,7 @@ class SpecRecord:
     raw_match: str         # exact text matched, e.g. "450 Nm"
     value: str             # numeric value, e.g. "450"
     unit: str              # unit string, e.g. "Nm"
+    subject: str = ""      # what the spec refers to (e.g. "bore", "shaft")
     context: str = ""      # surrounding sentence
     mentioned_by: str = "" # who mentioned it
     mentioned_email: str = ""
@@ -142,6 +143,42 @@ SPEC_PATTERNS: List[tuple] = [
 ]
 
 
+SUBJECT_KEYWORDS = [
+    "bore", "shaft", "flange", "diameter", "length", "width", "height", 
+    "thickness", "clearance", "pitch", "head", "weight", "mass", "pressure", 
+    "temperature", "voltage", "current", "torque", "speed", "power", 
+    "tolerance", "thread", "bolt", "material", "stroke", "capacity", "depth",
+    "flow", "volume", "radius"
+]
+
+
+def _extract_subject(context: str, match_value: str) -> str:
+    """Find the most likely subject in the context sentence for the matched value."""
+    if not context:
+        return ""
+        
+    context_lower = context.lower()
+    found_subjects = []
+    
+    for kw in SUBJECT_KEYWORDS:
+        idx = context_lower.find(kw)
+        if idx != -1:
+            found_subjects.append((idx, kw))
+            
+    if not found_subjects:
+        return ""
+        
+    value_idx = context_lower.find(match_value.lower())
+    if value_idx != -1:
+        # Sort by absolute distance to the value
+        found_subjects.sort(key=lambda x: abs(x[0] - value_idx))
+    else:
+        # Fallback to sorting by appearance
+        found_subjects.sort()
+        
+    return found_subjects[0][1].capitalize()
+
+
 def _get_sentence_context(text: str, match_start: int, match_end: int) -> str:
     """Extract the sentence containing or surrounding the match."""
     # Find sentence boundaries (rough: split on ., !, ?, newline)
@@ -197,12 +234,14 @@ def extract_specs_regex(
                 unit = ""
 
             context = _get_sentence_context(text, match.start(), match.end())
+            subject = _extract_subject(context, str(value))
 
             specs.append(SpecRecord(
                 category=category,
                 raw_match=raw,
                 value=str(value),
                 unit=unit or "",
+                subject=subject,
                 context=context,
                 mentioned_by=sender_name,
                 mentioned_email=sender_email,
@@ -236,12 +275,14 @@ def extract_materials(
             # Find the position for context
             idx = text_lower.find(mat_lower)
             context = _get_sentence_context(text, idx, idx + len(material))
+            subject = _extract_subject(context, material)
 
             specs.append(SpecRecord(
                 category="Material",
                 raw_match=material,
                 value=material,
                 unit="",
+                subject=subject,
                 context=context,
                 mentioned_by=sender_name,
                 mentioned_email=sender_email,

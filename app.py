@@ -16,10 +16,13 @@ from processing.deduplicator import deduplicate_body
 from processing.spec_extractor import extract_all_specs
 from processing.sentence_tagger import tag_sentences, extract_unresolved
 from processing.summarizer import generate_summary
+from processing.local_ai import generate_local_summary
 from main import build_people_table, build_timeline, load_config
 from output.report_docx import generate_docx_report
 from output.report_excel import generate_excel_report
 from output.report_html import generate_html_report
+import plotly.express as px
+import pandas as pd
 
 # ── STREAMLIT CONFIG ──
 st.set_page_config(
@@ -250,6 +253,11 @@ if uploaded_files:
     st.header("📊 Executive Summary")
     st.markdown(data["summary"], unsafe_allow_html=True)
     
+    if st.button("✨ Generate AI Summary (Local)", help="Requires Ollama running locally at port 11434"):
+        with st.spinner("Asking local AI (Ollama) to summarize..."):
+            local_sum = generate_local_summary(data["emails"], data["specs"], data["people"], data["unresolved"])
+            st.info(local_sum)
+            
     st.markdown("---")
     
     # Metrics
@@ -266,7 +274,7 @@ if uploaded_files:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["📋 Specifications", "⚠️ Open Items", "👥 People", "💾 Export Reports"])
+    tab1, tab_viz, tab2, tab3, tab4 = st.tabs(["📋 Specifications", "📈 Visualizations", "⚠️ Open Items", "👥 People", "💾 Export Reports"])
     
     with tab1:
         st.subheader("Extracted Specifications")
@@ -275,13 +283,60 @@ if uploaded_files:
             for s in data["specs"]:
                 spec_data.append({
                     "Category": s.category,
+                    "Subject": getattr(s, 'subject', ''),
                     "Value": f"{s.value} {s.unit}".strip(),
                     "Mentioned By": s.mentioned_by,
                     "Context": s.context
                 })
-            st.dataframe(spec_data, use_container_width=True)
+            st.dataframe(spec_data, use_container_width=True, column_config={
+                "Context": st.column_config.TextColumn(width="large")
+            })
+            
+            st.markdown("#### Detailed Context")
+            for i, s in enumerate(data["specs"]):
+                subject_label = getattr(s, 'subject', 'Unknown')
+                with st.expander(f"{s.category}: {subject_label} = {s.value} {s.unit} (by {s.mentioned_by})"):
+                    highlighted = s.context.replace(s.raw_match, f"**<mark>{s.raw_match}</mark>**")
+                    st.markdown(f"> {highlighted}", unsafe_allow_html=True)
         else:
             st.info("No specifications detected in these emails.")
+
+    with tab_viz:
+        st.subheader("Interactive Visualizations")
+        if data["specs"]:
+            # Prepare numeric dataframe for charts
+            def parse_val(v):
+                try:
+                    return float(str(v).replace(',', ''))
+                except ValueError:
+                    return 0.0
+
+            df_specs = pd.DataFrame([{
+                "Category": s.category,
+                "Subject": getattr(s, 'subject', 'Unknown') or 'Unknown',
+                "Value": parse_val(s.value),
+                "Unit": s.unit,
+                "Mentioned By": s.mentioned_by
+            } for s in data["specs"]])
+            
+            df_numeric = df_specs[df_specs["Value"] > 0]
+            
+            if not df_numeric.empty:
+                col_chart1, col_chart2 = st.columns(2)
+                with col_chart1:
+                    fig1 = px.bar(df_numeric, x="Category", y="Value", color="Subject",
+                                 title="Values by Category",
+                                 hover_data=["Unit", "Mentioned By"])
+                    st.plotly_chart(fig1, use_container_width=True)
+                with col_chart2:
+                    fig2 = px.scatter(df_numeric, x="Subject", y="Value", color="Category",
+                                     size="Value", title="Measurements by Subject",
+                                     hover_data=["Unit"])
+                    st.plotly_chart(fig2, use_container_width=True)
+            else:
+                st.info("Could not extract numeric values from specifications for charting.")
+        else:
+            st.info("No data available for visualization.")
 
     with tab2:
         st.subheader("Action Items & Unresolved Queries")
