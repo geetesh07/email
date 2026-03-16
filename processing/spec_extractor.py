@@ -140,15 +140,55 @@ SPEC_PATTERNS: List[tuple] = [
             re.IGNORECASE,
         ),
     ),
+    # ── Coupling Style / Model ──
+    (
+        "Coupling Style",
+        re.compile(
+            r"\b((?:RMS|RZS|RM|RZ|MP|MS)\s*\d{2,4}(?:\s*[A-Z]{0,3})?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    # ── Roughness / Surface Finish ──
+    (
+        "Surface Finish",
+        re.compile(
+            r"(\d+(?:\.\d+)?)\s*(Ra|Rz|µm|RMS|rms|micro[\s-]?inch)",
+            re.IGNORECASE,
+        ),
+    ),
+    # ── Interference / Fit ──
+    (
+        "Fit/Interference",
+        re.compile(
+            r"([HhKkMmNnPpRrSsTtUu]\d{1,2}\s*/\s*[a-z]\d{1,2}|(?:H7|H6|H8|k6|m6|n6|p6|js6|g6|f7|e8)\b)",
+            re.IGNORECASE,
+        ),
+    ),
+    # ── Bore / Hub Bore (coupling specific) ──
+    (
+        "Hub Bore",
+        re.compile(
+            r"(?:hub|bore|coupling)\s*(?:bore|diameter|dia|size)?\s*(?:[:=]|is|of)?\s*(\d+(?:\.\d+)?)\s*(mm|inch|in)?",
+            re.IGNORECASE,
+        ),
+    ),
 ]
 
 
 SUBJECT_KEYWORDS = [
-    "bore", "shaft", "flange", "diameter", "length", "width", "height", 
-    "thickness", "clearance", "pitch", "head", "weight", "mass", "pressure", 
-    "temperature", "voltage", "current", "torque", "speed", "power", 
+    # General engineering
+    "bore", "shaft", "flange", "diameter", "length", "width", "height",
+    "thickness", "clearance", "pitch", "head", "weight", "mass", "pressure",
+    "temperature", "voltage", "current", "torque", "speed", "power",
     "tolerance", "thread", "bolt", "material", "stroke", "capacity", "depth",
-    "flow", "volume", "radius"
+    "flow", "volume", "radius",
+    # Coupling-specific
+    "coupling", "hub", "spacer", "sleeve", "disc", "diaphragm", "guard",
+    "interference", "keyway", "key", "setscrew", "clamping", "taper",
+    "roughness", "finish", "surface", "runout", "concentricity",
+    "alignment", "misalignment", "angular", "parallel", "axial",
+    "rubber", "element", "insert", "spider", "jaw",
+    "driven", "driver", "motor", "pump", "gearbox", "compressor",
 ]
 
 
