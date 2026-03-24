@@ -10,7 +10,7 @@ from main import build_people_table
 @pytest.fixture
 def sample_emails():
     # Simulate parsed email records
-    return [
+    emails = [
         EmailRecord(
             message_id="msg001",
             subject="Motor Specs Update",
@@ -19,7 +19,6 @@ def sample_emails():
             recipients=["bob@company.com"],
             cc=[],
             date=None,
-            date_str="2023-10-24",
             body="Hey Bob,\nThe new prototype needs a 45.5mm shaft. Torque is 120Nm.\nCan we get this done by Friday?\nThanks,\nAlice",
             attachments=[],
             source_file="email1.eml"
@@ -32,12 +31,15 @@ def sample_emails():
             recipients=["alice@company.com"],
             cc=[],
             date=None,
-            date_str="2023-10-25",
             body="Alice,\nActually, engineering just told me torque should be 150 Nm. \nLet's decide on the housing material too.\n-Bob",
             attachments=[],
             source_file="email2.eml"
         )
     ]
+
+    emails[0].date_str = "2023-10-24"
+    emails[1].date_str = "2023-10-25"
+    return emails
 
 @pytest.fixture
 def mock_config():

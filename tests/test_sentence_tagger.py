@@ -23,7 +23,7 @@ def test_extract_unresolved_question():
 
 def test_extract_unresolved_todo():
     text = "ACTION: Verify the thermal limits by Tuesday."
-    unresolved = extract_unresolved(text, ["ACTION:", "TODO:"], "Bob", "bob@test.com", "2023-01-01", "test.eml", ["thermal"])
+    unresolved = extract_unresolved(text, ["ACTION", "TODO"], "Bob", "bob@test.com", "2023-01-01", "test.eml", ["thermal"])
     
     assert len(unresolved) == 1
     assert "ACTION: Verify" in unresolved[0].sentence

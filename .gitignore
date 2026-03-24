@@ -1,0 +1,27 @@
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environment files
+.env
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+
+# Application data
+users.db
+email_logs.db
+uploads/
+*.eml
+*.msg
+
+# Temporary files
+err.txt
+tests_output.txt
+*.log

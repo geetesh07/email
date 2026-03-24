@@ -91,95 +91,79 @@ def generate_extractive_summary(
     specs: List[Any],
     people: List[Dict],
     unresolved: List[Any],
-    top_n: int = 10,
+    top_n: int = 5,
 ) -> str:
     """
-    Generate a structured extractive summary from the email thread.
-    Uses TextRank for sentence selection + categorization for structure.
+    Generate a structured Executive Summary.
+    Uses structured extracted data (specs, action items) rather than purely
+    extractive fragmented sentences to ensure high-quality English output.
     """
     if not emails:
         return "No emails were provided for summarization."
 
-    # ── Build the full corpus ──
-    all_text = "\n".join([e.body for e in emails if e.body])
-    all_sentences = _split_sentences(all_text)
-
-    if not all_sentences:
-        return "Could not extract meaningful sentences from the emails."
-
-    # ── Use TextRank to select top sentences ──
-    selected = select_top_sentences(all_sentences, top_n=top_n)
-
-    # ── Categorize selected sentences ──
-    categorized: Dict[str, List[str]] = {
-        "spec": [],
-        "decision": [],
-        "engineering": [],
-        "open_item": [],
-        "general": [],
-    }
-    for sent in selected:
-        cat = _categorize_sentence(sent)
-        categorized[cat].append(sent)
-
-    # ── Build structured summary ──
+    # ── Header ──
+    companies = list(set([p.get("company", "") for p in people if p.get("company") and p.get("company") != "Unknown"]))
+    
     summary_parts = []
-
-    # Header
-    participant_names = [p.get("name", "Unknown") for p in people[:5]]
-    companies = list(set([p.get("company", "") for p in people if p.get("company")]))
-
-    summary_parts.append("### Extractive Summary\n")
+    summary_parts.append("### Executive Engineering Summary\n")
+    
+    company_str = f" across {len(companies)} organization(s) ({', '.join(companies[:3])})" if companies else ""
     summary_parts.append(
-        f"Analyzed **{len(emails)} email(s)** involving **{len(people)} participant(s)**"
-        + (f" from **{', '.join(companies[:3])}**." if companies else ".")
+        f"This thread contains **{len(emails)} emails** actively discussing engineering specifications "
+        f"with **{len(people)} participants**{company_str}."
     )
 
-    # Spec overview
+    # ── Key Specifications ──
     if specs:
-        categories = list(set([s.category for s in specs]))
-        summary_parts.append(
-            f"\n**{len(specs)} engineering specification(s)** extracted across "
-            f"categories: {', '.join(categories[:6])}."
-        )
+        summary_parts.append("\n**📐 Finalized / Proposed Specifications:**")
+        
+        # Group specs by category
+        from collections import defaultdict
+        spec_groups = defaultdict(list)
+        for s in specs:
+            spec_groups[s.category].append(s)
+            
+        for cat, items in list(spec_groups.items())[:6]: # Show top 6 categories
+            # Gather unique values for this category
+            unique_vals = list({f"{s.value} {s.unit}".strip() for s in items if s.value})
+            if not unique_vals:
+                continue
+            
+            val_str = " | ".join(unique_vals)
+            summary_parts.append(f"- **{cat}:** {val_str}")
 
-    # Key specifications mentioned
-    spec_sentences = categorized["spec"]
-    if spec_sentences:
-        summary_parts.append("\n**Key Specifications Discussed:**\n")
-        for sent in spec_sentences[:4]:
-            display = sent[:250] + "..." if len(sent) > 250 else sent
-            summary_parts.append(f"- {display}")
+    # ── Decisions & Central Statements ──
+    # We still use TextRank just to find 1-2 central sentences that have decision words
+    all_text = "\n".join([e.body for e in emails if e.body])
+    all_sentences = _split_sentences(all_text)
+    
+    if all_sentences:
+        selected = select_top_sentences(all_sentences, top_n=top_n*2)
+        decision_sentences = [s for s in selected if _categorize_sentence(s) == "decision"]
+        
+        if decision_sentences:
+            summary_parts.append("\n**🤝 Key Agreements & Statements:**")
+            # Clean up the sentences a bit (remove > quotes, strip whitespace)
+            for sent in decision_sentences[:2]:
+                clean_sent = re.sub(r'^[>\s]+', '', sent)
+                display = clean_sent[:200] + "..." if len(clean_sent) > 200 else clean_sent
+                summary_parts.append(f"- \"{display}\"")
 
-    # Decisions made
-    decision_sentences = categorized["decision"]
-    if decision_sentences:
-        summary_parts.append("\n**Decisions & Agreements:**\n")
-        for sent in decision_sentences[:3]:
-            display = sent[:250] + "..." if len(sent) > 250 else sent
-            summary_parts.append(f"- {display}")
-
-    # Engineering discussion
-    eng_sentences = categorized["engineering"]
-    if eng_sentences:
-        summary_parts.append("\n**Engineering Discussion:**\n")
-        for sent in eng_sentences[:3]:
-            display = sent[:250] + "..." if len(sent) > 250 else sent
-            summary_parts.append(f"- {display}")
-
-    # General context (if no other categories filled)
-    if not spec_sentences and not decision_sentences and not eng_sentences:
-        general = categorized["general"]
-        if general:
-            summary_parts.append("\n**Key Statements:**\n")
-            for sent in general[:4]:
-                display = sent[:250] + "..." if len(sent) > 250 else sent
-                summary_parts.append(f"- {display}")
-
-    # Unresolved items callout
+    # ── Action Items ──
     if unresolved:
-        summary_parts.append(
-            f"\n**{len(unresolved)} unresolved item(s)** require attention or confirmation."
-        )
+        summary_parts.append("\n**⏳ Pending Action Items & Questions:**")
+        
+        # unresolved items are typically objects with .sentence and .mentioned_by
+        for u in unresolved[:3]:
+            # Clean up the sentence
+            clean_q = re.sub(r'^[>\s]+', '', u.sentence)
+            sender = getattr(u, 'mentioned_by', 'Unknown') or 'Unknown'
+            summary_parts.append(f"- {clean_q} *(Asked by {sender})*")
+            
+        if len(unresolved) > 3:
+            summary_parts.append(f"- *...and {len(unresolved) - 3} more unresolved item(s).*")
+            
+    if not specs and not unresolved and not decision_sentences:
+        summary_parts.append("\n*No specific engineering parameters or action items were identified in this thread.*")
 
     return "\n".join(summary_parts)

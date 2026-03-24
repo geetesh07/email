@@ -6,12 +6,12 @@ def test_exact_deduplication():
     text1 = "Here are the new specs for the motor."
     text2 = "Here are the new specs for the motor."
     
-    assert deduplicate_body(text1, []) is False
+    assert len(deduplicate_body(text1, [])) > 0
     # Add text1 to seen_hashes manually to simulate the deduplication process
     # Because deduplicate_body modifies the passed set
     seen = set()
     deduplicate_body(text1, seen)
-    assert deduplicate_body(text2, seen) is True
+    assert len(deduplicate_body(text2, seen)) == 0
     
 def test_fuzzy_deduplication():
     # Slightly different texts (due to formatting/forwarding)
@@ -21,7 +21,7 @@ def test_fuzzy_deduplication():
     deduplicate_body(text1, seen)
     
     # Should be detected as a duplicate because > are stripped
-    assert deduplicate_body(text2, seen) is True
+    assert len(deduplicate_body(text2, seen)) == 0
 
 def test_no_dedup_different():
     text1 = "The motor rpm is 3000."
@@ -29,4 +29,4 @@ def test_no_dedup_different():
     seen = set()
     
     deduplicate_body(text1, seen)
-    assert deduplicate_body(text2, seen) is False
+    assert len(deduplicate_body(text2, seen)) > 0

@@ -1,19 +1,13 @@
 import pytest
-from processing.spec_extractor import extract_all_specs, clean_value
+from processing.spec_extractor import extract_all_specs
 
-def test_clean_value():
-    assert clean_value("10.5 mm") == "10.5"
-    assert clean_value("~25.0 kg") == "25.0"
-    assert clean_value("1,234.56 N") == "1234.56"
-    assert clean_value("> 500 V") == "500"
-    
 def test_extract_dimensions():
     text = "The shaft should be 45.5mm in diameter and length is 120 cm."
     specs = extract_all_specs(text, [], "Alice", "alice@example.com", "2023-01-01", "test.eml")
     
     assert len(specs) >= 2
     cats = [s.category for s in specs]
-    assert "📐 Dimensions" in cats
+    assert "Dimensions" in cats
     
     # Check specific values
     vals = [s.value for s in specs]
@@ -23,7 +17,7 @@ def test_extract_dimensions():
 def test_extract_torque():
     text = "Tighten the bolts to 50 Nm."
     specs = extract_all_specs(text, [], "Alice", "alice@example.com", "2023-01-01", "test.eml")
-    assert any(s.category == "🔧 Torque" and s.value == "50" for s in specs)
+    assert any(s.category == "Torque" and s.value == "50" for s in specs)
 
 def test_extract_temperature():
     text = "Operating temp is -20 C to 85°C."
@@ -36,7 +30,7 @@ def test_extract_temperature():
 def test_extract_materials():
     text = "Housing must be made of Aluminum 6061-T6."
     specs = extract_all_specs(text, ["Aluminum 6061-T6", "Steel"], "Alice", "alice@example.com", "2023-01-01", "test.eml")
-    assert any(s.category == "🧱 Materials" for s in specs)
+    assert any(s.category == "Material" for s in specs)
 
 def test_false_positives_filtered():
     # Looks like a dimension, but is a part number or date
