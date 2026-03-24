@@ -26,6 +26,7 @@ class EmailRecord:
     body: str = ""
     source_file: str = ""
     message_id: str = ""
+    attachments: List[str] = field(default_factory=list)
 
     @property
     def date_str(self) -> str:

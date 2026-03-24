@@ -24,10 +24,17 @@ from processing.sentence_tagger import tag_sentences, extract_unresolved
 from processing.summarizer import generate_summary
 from processing.nlp_summary import generate_extractive_summary
 from processing.local_ai import generate_local_summary, check_ollama_status
+from processing.conflict_detector import detect_conflicts, format_conflicts_summary
 from main import build_people_table, build_timeline, load_config
 from output.report_docx import generate_docx_report
 from output.report_excel import generate_excel_report
 from output.report_html import generate_html_report
+
+# Try importing hybrid NER extractor
+try:
+    from processing.ner_extractor import extract_all_specs_hybrid, SPACY_AVAILABLE
+except ImportError:
+    SPACY_AVAILABLE = False
 import plotly.express as px
 import pandas as pd
 
@@ -334,14 +341,25 @@ def process_uploaded_files(uploaded_files, config):
         all_unresolved = []
 
         for record in emails:
-            email_specs = extract_all_specs(
-                text=record.body,
-                material_keywords=config.get("materials", []),
-                sender_name=record.sender_name,
-                sender_email=record.sender_email,
-                date_str=record.date_str,
-                source_file=record.source_file,
-            )
+            # Use hybrid NER+regex extraction if spaCy is available
+            if SPACY_AVAILABLE:
+                email_specs = extract_all_specs_hybrid(
+                    text=record.body,
+                    material_keywords=config.get("materials", []),
+                    sender_name=record.sender_name,
+                    sender_email=record.sender_email,
+                    date_str=record.date_str,
+                    source_file=record.source_file,
+                )
+            else:
+                email_specs = extract_all_specs(
+                    text=record.body,
+                    material_keywords=config.get("materials", []),
+                    sender_name=record.sender_name,
+                    sender_email=record.sender_email,
+                    date_str=record.date_str,
+                    source_file=record.source_file,
+                )
             all_specs.extend(email_specs)
             specs_by_email[record.message_id] = email_specs
 
@@ -363,6 +381,7 @@ def process_uploaded_files(uploaded_files, config):
                 sender_email=record.sender_email,
                 date_str=record.date_str,
                 source_file=record.source_file,
+                engineering_keywords=config.get("engineering_keywords", []),
             )
             all_unresolved.extend(unresolved)
 
@@ -370,7 +389,10 @@ def process_uploaded_files(uploaded_files, config):
         people = build_people_table(emails, specs_by_email, config.get("role_keywords", []))
         timeline = build_timeline(all_specs, all_tagged)
 
-        # 5. Executive Summary
+        # 5. Conflict Detection
+        conflicts = detect_conflicts(all_specs)
+
+        # 6. Executive Summary
         summary = generate_summary(emails, all_specs, people, all_unresolved, timeline)
 
         return {
@@ -380,7 +402,8 @@ def process_uploaded_files(uploaded_files, config):
             "tagged": all_tagged,
             "unresolved": all_unresolved,
             "timeline": timeline,
-            "summary": summary
+            "summary": summary,
+            "conflicts": conflicts,
         }
 
 
@@ -456,9 +479,24 @@ with st.sidebar:
     st.markdown("---")
 
     # Status indicator
+    valid_files = []
     if uploaded_files:
-        st.markdown('<span class="status-badge status-ready">✓ Files Loaded</span>', unsafe_allow_html=True)
-        st.caption(f"{len(uploaded_files)} file(s) ready for analysis")
+        for f in uploaded_files:
+            # File size validation (Max 50MB)
+            if f.size > 50 * 1024 * 1024:
+                st.sidebar.error(f"File {f.name} exceeds 50MB limit.")
+                continue
+            # Extension validation
+            ext = f.name.split('.')[-1].lower()
+            if ext not in ['msg', 'eml']:
+                st.sidebar.error(f"File {f.name} has unsupported extension .{ext}")
+                continue
+            valid_files.append(f)
+
+        if valid_files:
+            st.markdown(f'<span class="status-badge status-ready">✓ {len(valid_files)} File(s) Ready</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span class="status-badge status-pending">⚠️ No Valid Files</span>', unsafe_allow_html=True)
     else:
         st.markdown('<span class="status-badge status-pending">⏳ Awaiting Files</span>', unsafe_allow_html=True)
 
@@ -597,8 +635,8 @@ if uploaded_files:
     # ═══════════════════════════════════════════════════════════════
     #  TABS
     # ═══════════════════════════════════════════════════════════════
-    tab_conv, tab_specs, tab_viz, tab_open, tab_people, tab_export, tab_chat = st.tabs([
-        "📧 Conversation", "📋 Specifications", "📈 Visualizations",
+    tab_conv, tab_specs, tab_conflicts, tab_viz, tab_open, tab_people, tab_export, tab_chat = st.tabs([
+        "📧 Conversation", "📋 Specs", "⚡ Conflicts", "📈 Viz",
         "⚠️ Open Items", "👥 People", "💾 Export", "💬 Chat (AI)"
     ])
 
@@ -632,30 +670,85 @@ if uploaded_files:
     with tab_specs:
         st.subheader("📋 Extracted Specifications")
         if data["specs"]:
+            # Search & Filter
+            col_search, col_cat, col_person = st.columns([2, 1, 1])
+            with col_search:
+                search_term = st.text_input("🔍 Search specs...", "").lower()
+            with col_cat:
+                all_cats = ["All"] + sorted(list(set(s.category for s in data["specs"])))
+                filter_cat = st.selectbox("Filter Category", all_cats)
+            with col_person:
+                all_people = ["All"] + sorted(list(set(s.mentioned_by for s in data["specs"])))
+                filter_person = st.selectbox("Mentioned By", all_people)
+
             # Build dataframe
             spec_data = []
             for s in data["specs"]:
+                # Apply filters
+                if filter_cat != "All" and s.category != filter_cat:
+                    continue
+                if filter_person != "All" and s.mentioned_by != filter_person:
+                    continue
+                subject_text = getattr(s, 'subject', '') or ''
+                if search_term and search_term not in s.value.lower() and search_term not in subject_text.lower() and search_term not in s.category.lower():
+                    continue
+
                 spec_data.append({
                     "Category": s.category,
-                    "Subject": getattr(s, 'subject', '') or '—',
+                    "Subject": subject_text or '—',
                     "Value": s.value,
                     "Unit": s.unit or '—',
                     "Mentioned By": s.mentioned_by,
                 })
-            df_specs_table = pd.DataFrame(spec_data)
-            st.dataframe(df_specs_table, use_container_width=True, hide_index=True)
+            
+            if spec_data:
+                df_specs_table = pd.DataFrame(spec_data)
+                st.dataframe(df_specs_table, use_container_width=True, hide_index=True)
 
-            st.markdown("#### 🔎 Detailed Context")
-            for s in data["specs"]:
-                subject_label = getattr(s, 'subject', '') or 'Unknown'
-                label = f"**{s.category}** → {subject_label}: {s.value} {s.unit}  _(by {s.mentioned_by})_"
-                with st.expander(label):
-                    highlighted = s.context.replace(
-                        s.raw_match, f"<mark>{s.raw_match}</mark>"
-                    )
-                    st.markdown(f"> {highlighted}", unsafe_allow_html=True)
+                st.markdown("#### 🔎 Detailed Context")
+                for s in data["specs"]:
+                    if filter_cat != "All" and s.category != filter_cat:
+                        continue
+                    if filter_person != "All" and s.mentioned_by != filter_person:
+                        continue
+                    subject_text = getattr(s, 'subject', '') or ''
+                    if search_term and search_term not in s.value.lower() and search_term not in subject_text.lower() and search_term not in s.category.lower():
+                        continue
+
+                    label = f"**{s.category}** → {subject_text or 'Unknown'}: {s.value} {s.unit}  _(by {s.mentioned_by})_"
+                    with st.expander(label):
+                        highlighted = s.context.replace(
+                            s.raw_match, f"<mark>{s.raw_match}</mark>"
+                        )
+                        st.markdown(f"> {highlighted}", unsafe_allow_html=True)
+            else:
+                st.info("No specifications match your filters.")
         else:
             st.info("No specifications detected in these emails.")
+
+    # ── TAB: Conflicts ──
+    with tab_conflicts:
+        st.subheader("⚡ Specification Conflicts")
+        st.write("Detects when different people mention conflicting values for the same specification.")
+        
+        conflicts = data.get("conflicts", [])
+        if conflicts:
+            st.warning(f"Detected **{len(conflicts)}** potential conflicts that may require clarification.")
+            
+            for c in conflicts:
+                icon = "🔴" if c.severity == "high" else "🟡" if c.severity == "medium" else "🟢"
+                with st.container():
+                    st.markdown(f"#### {icon} {c.subject} ({c.category})")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**Option A:** `{c.spec_a_value} {c.spec_a_unit}`")
+                        st.caption(f"Mentioned by {c.spec_a_by} on {c.spec_a_date}")
+                    with col2:
+                        st.markdown(f"**Option B:** `{c.spec_b_value} {c.spec_b_unit}`")
+                        st.caption(f"Mentioned by {c.spec_b_by} on {c.spec_b_date}")
+                    st.divider()
+        else:
+            st.success("No specification conflicts detected. Values appear consistent across the thread.")
 
     # ── TAB: Visualizations ──
     with tab_viz:

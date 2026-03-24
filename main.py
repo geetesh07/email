@@ -306,6 +306,7 @@ def run_pipeline(args):
             sender_email=record.sender_email,
             date_str=record.date_str,
             source_file=record.source_file,
+            engineering_keywords=config.get("engineering_keywords", []),
         )
         all_unresolved.extend(unresolved)
 

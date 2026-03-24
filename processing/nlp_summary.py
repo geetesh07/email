@@ -1,12 +1,15 @@
 """
 nlp_summary.py — Python-native extractive summarizer for engineering email threads.
-Uses sentence scoring based on term frequency and engineering keyword weighting.
+Uses TextRank graph-based ranking + engineering keyword weighting.
+Produces structured, coherent summaries with section-based output.
 No external LLM or API required.
 """
 
 import re
 from collections import Counter
 from typing import Any, List, Dict
+
+from processing.textrank import select_top_sentences
 
 
 # Engineering keywords get extra weight in sentence scoring
@@ -33,22 +36,18 @@ ENGINEERING_BOOST_WORDS = {
     "driven", "driver", "motor", "pump", "gearbox", "compressor",
 }
 
-# Common stop words to ignore during scoring
-STOP_WORDS = {
-    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-    "have", "has", "had", "do", "does", "did", "will", "would", "could",
-    "should", "may", "might", "shall", "can", "need", "dare", "ought",
-    "used", "to", "of", "in", "for", "on", "with", "at", "by", "from",
-    "as", "into", "through", "during", "before", "after", "above", "below",
-    "between", "out", "off", "over", "under", "again", "further", "then",
-    "once", "here", "there", "when", "where", "why", "how", "all", "both",
-    "each", "few", "more", "most", "other", "some", "such", "no", "nor",
-    "not", "only", "own", "same", "so", "than", "too", "very", "just",
-    "don", "now", "and", "but", "or", "if", "while", "this", "that",
-    "these", "those", "i", "me", "my", "we", "our", "you", "your", "he",
-    "him", "his", "she", "her", "it", "its", "they", "them", "their",
-    "what", "which", "who", "whom", "am", "up", "about",
+# Decision/action keywords for identifying decision sentences
+DECISION_WORDS = {
+    "agreed", "decided", "confirmed", "approved", "selected", "chosen",
+    "finalized", "accepted", "rejected", "cancelled", "proceed", "go ahead",
+    "final", "concluded", "settled", "resolved",
 }
+
+# Pattern for sentences containing numeric specs
+HAS_SPEC_PATTERN = re.compile(
+    r'\d+(?:\.\d+)?\s*(?:mm|cm|m|kg|g|Nm|kW|HP|RPM|bar|psi|Pa|°|V|A|Hz)\b',
+    re.IGNORECASE
+)
 
 
 def _tokenize(text: str) -> List[str]:
@@ -62,37 +61,29 @@ def _split_sentences(text: str) -> List[str]:
     return [s.strip() for s in sentences if len(s.strip()) > 15]
 
 
-def _compute_word_frequencies(words: List[str]) -> Dict[str, float]:
-    """Compute normalized word frequencies, excluding stop words."""
-    filtered = [w for w in words if w not in STOP_WORDS and len(w) > 1]
-    freq = Counter(filtered)
-    if not freq:
-        return {}
-    max_freq = max(freq.values())
-    return {word: count / max_freq for word, count in freq.items()}
+def _categorize_sentence(sentence: str) -> str:
+    """Categorize a sentence for structured output."""
+    sent_lower = sentence.lower()
 
+    # Check for decision/action words
+    for word in DECISION_WORDS:
+        if word in sent_lower:
+            return "decision"
 
-def _score_sentence(sentence: str, word_freqs: Dict[str, float], boost_factor: float = 2.0) -> float:
-    """Score a sentence based on word frequency and engineering keyword boost."""
-    words = _tokenize(sentence)
-    if not words:
-        return 0.0
+    # Check for spec-containing sentences
+    if HAS_SPEC_PATTERN.search(sentence):
+        return "spec"
 
-    score = 0.0
-    for word in words:
-        base_score = word_freqs.get(word, 0.0)
-        if word in ENGINEERING_BOOST_WORDS:
-            base_score = max(base_score, 0.3) * boost_factor
-        score += base_score
+    # Check for questions/unresolved
+    if "?" in sentence or "tbd" in sent_lower or "pending" in sent_lower:
+        return "open_item"
 
-    # Normalize by sentence length (prefer medium-length sentences)
-    length = len(words)
-    if length < 5:
-        score *= 0.5  # Penalize very short sentences
-    elif length > 40:
-        score *= 0.8  # Slightly penalize very long sentences
+    # Default: general discussion
+    eng_word_count = sum(1 for w in _tokenize(sentence) if w in ENGINEERING_BOOST_WORDS)
+    if eng_word_count >= 2:
+        return "engineering"
 
-    return score / max(length, 1)
+    return "general"
 
 
 def generate_extractive_summary(
@@ -100,12 +91,11 @@ def generate_extractive_summary(
     specs: List[Any],
     people: List[Dict],
     unresolved: List[Any],
-    top_n: int = 8,
+    top_n: int = 10,
 ) -> str:
     """
-    Generate an extractive summary from the email thread.
-    Picks the top N most informative sentences based on term frequency
-    and engineering keyword weighting.
+    Generate a structured extractive summary from the email thread.
+    Uses TextRank for sentence selection + categorization for structure.
     """
     if not emails:
         return "No emails were provided for summarization."
@@ -117,46 +107,29 @@ def generate_extractive_summary(
     if not all_sentences:
         return "Could not extract meaningful sentences from the emails."
 
-    # ── Compute word frequencies across the entire corpus ──
-    all_words = _tokenize(all_text)
-    word_freqs = _compute_word_frequencies(all_words)
+    # ── Use TextRank to select top sentences ──
+    selected = select_top_sentences(all_sentences, top_n=top_n)
 
-    # ── Score each sentence ──
-    scored = [(sent, _score_sentence(sent, word_freqs)) for sent in all_sentences]
-    scored.sort(key=lambda x: x[1], reverse=True)
+    # ── Categorize selected sentences ──
+    categorized: Dict[str, List[str]] = {
+        "spec": [],
+        "decision": [],
+        "engineering": [],
+        "open_item": [],
+        "general": [],
+    }
+    for sent in selected:
+        cat = _categorize_sentence(sent)
+        categorized[cat].append(sent)
 
-    # ── Pick top N unique sentences ──
-    seen = set()
-    selected = []
-    for sent, score in scored:
-        # Simple dedup: skip if too similar to already selected
-        sent_lower = sent.lower().strip()
-        if sent_lower in seen:
-            continue
-        # Check for near-duplicate (>80% word overlap)
-        sent_words = set(_tokenize(sent))
-        is_dup = False
-        for prev in selected:
-            prev_words = set(_tokenize(prev))
-            if len(sent_words & prev_words) / max(len(sent_words | prev_words), 1) > 0.8:
-                is_dup = True
-                break
-        if is_dup:
-            continue
-
-        seen.add(sent_lower)
-        selected.append(sent)
-        if len(selected) >= top_n:
-            break
-
-    # ── Build the summary ──
+    # ── Build structured summary ──
     summary_parts = []
 
     # Header
     participant_names = [p.get("name", "Unknown") for p in people[:5]]
     companies = list(set([p.get("company", "") for p in people if p.get("company")]))
 
-    summary_parts.append("### 🔍 Extractive Summary\n")
+    summary_parts.append("### Extractive Summary\n")
     summary_parts.append(
         f"Analyzed **{len(emails)} email(s)** involving **{len(people)} participant(s)**"
         + (f" from **{', '.join(companies[:3])}**." if companies else ".")
@@ -166,22 +139,47 @@ def generate_extractive_summary(
     if specs:
         categories = list(set([s.category for s in specs]))
         summary_parts.append(
-            f"\n**{len(specs)} engineering specification(s)** were extracted across "
+            f"\n**{len(specs)} engineering specification(s)** extracted across "
             f"categories: {', '.join(categories[:6])}."
         )
 
-    # Key sentences
-    if selected:
-        summary_parts.append("\n**Key statements from the thread:**\n")
-        for i, sent in enumerate(selected, 1):
-            # Truncate overly long sentences
+    # Key specifications mentioned
+    spec_sentences = categorized["spec"]
+    if spec_sentences:
+        summary_parts.append("\n**Key Specifications Discussed:**\n")
+        for sent in spec_sentences[:4]:
             display = sent[:250] + "..." if len(sent) > 250 else sent
-            summary_parts.append(f"{i}. {display}")
+            summary_parts.append(f"- {display}")
+
+    # Decisions made
+    decision_sentences = categorized["decision"]
+    if decision_sentences:
+        summary_parts.append("\n**Decisions & Agreements:**\n")
+        for sent in decision_sentences[:3]:
+            display = sent[:250] + "..." if len(sent) > 250 else sent
+            summary_parts.append(f"- {display}")
+
+    # Engineering discussion
+    eng_sentences = categorized["engineering"]
+    if eng_sentences:
+        summary_parts.append("\n**Engineering Discussion:**\n")
+        for sent in eng_sentences[:3]:
+            display = sent[:250] + "..." if len(sent) > 250 else sent
+            summary_parts.append(f"- {display}")
+
+    # General context (if no other categories filled)
+    if not spec_sentences and not decision_sentences and not eng_sentences:
+        general = categorized["general"]
+        if general:
+            summary_parts.append("\n**Key Statements:**\n")
+            for sent in general[:4]:
+                display = sent[:250] + "..." if len(sent) > 250 else sent
+                summary_parts.append(f"- {display}")
 
     # Unresolved items callout
     if unresolved:
         summary_parts.append(
-            f"\n⚠️ **{len(unresolved)} unresolved item(s)** require attention or confirmation."
+            f"\n**{len(unresolved)} unresolved item(s)** require attention or confirmation."
         )
 
     return "\n".join(summary_parts)

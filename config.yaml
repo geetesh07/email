@@ -212,6 +212,23 @@ role_keywords:
   - "MD"
   - "GM"
 
+# ── Ignore Patterns (Salesforce / CRM refs) ──
+# These patterns are stripped from email text before spec extraction
+# to prevent false positives from SF case/record numbers.
+ignore_patterns:
+  - "ref:_"
+  - "Case#"
+  - "SF-Case-"
+  - "SF-Opp-"
+  - "ticket"
+  - "Ref:"
+  - "Reference:"
+
+# NOTE on unresolved markers:
+# The "?" marker now uses SMART detection — it only flags questions
+# that contain engineering keywords. Greetings like "How are you?"
+# are automatically excluded.
+
 # ── Coupling Style Codes (for reference) ──
 # These are matched by regex in spec_extractor.py:
 #   RM, MP, MS, RZ, RMS, RZS + trailing model numbers

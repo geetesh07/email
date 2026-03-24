@@ -1,5 +1,7 @@
 """
 spec_extractor.py — Regex rule engine for extracting engineering specifications.
+Includes pre-extraction filtering to remove Salesforce refs, phone numbers,
+and post-extraction validation to reject false positives.
 """
 
 import re
@@ -175,6 +177,103 @@ SPEC_PATTERNS: List[tuple] = [
 ]
 
 
+# ═══════════════════════════════════════════════════════════════
+#  SKIP PATTERNS — Things that look like specs but aren't
+# ═══════════════════════════════════════════════════════════════
+
+# Phone number patterns (with or without labels)
+SKIP_PHONE = re.compile(
+    r"(?:Tel|Phone|Mobile|Cell|Mob|Fax|Ph|T|M|F)\s*[:.]"
+    r"\s*[\+\d\(\)\-\s]{7,}"
+    r"|[\+]?\d[\d\s\-\(\)]{8,}",
+    re.IGNORECASE,
+)
+
+# Salesforce / CRM reference patterns
+SKIP_SF_REFS = re.compile(
+    r"ref:_[a-zA-Z0-9]+\._[a-zA-Z0-9]+:ref"  # SF threading ref
+    r"|\[\s*ref:\s*[a-zA-Z0-9_.\-]+\s*\]"      # [ref:XXXX]
+    r"|(?:Case|Ref|Reference|Ticket|Opp)\s*[#:.\-]\s*\d{5,}"  # Case#00012345
+    r"|SF-(?:Case|Opp)-\S+",                    # SF-Case-00012345
+    re.IGNORECASE,
+)
+
+# Standalone large numbers (5+ digits, no unit nearby) — likely IDs not specs
+SKIP_STANDALONE_ID = re.compile(r"\b\d{8,}\b")
+
+# PIN codes / postal codes (5-6 digit numbers preceded by PIN/zip context)
+SKIP_PIN_CODE = re.compile(
+    r"(?:pin|zip|postal)\s*[:.\-]?\s*\d{5,6}"
+    r"|\b\d{6}\b(?=\s*(?:india|us|uk|$))",
+    re.IGNORECASE,
+)
+
+# Context words that indicate a number is a reference, not a spec
+REFERENCE_CONTEXT_WORDS = {
+    "case", "reference", "ref", "ticket", "opportunity", "record",
+    "order", "invoice", "po", "purchase order", "quotation", "quote",
+    "enquiry", "inquiry", "id", "number", "no.",
+}
+
+
+def _pre_filter_text(text: str) -> str:
+    """
+    Remove known non-spec patterns from text BEFORE regex extraction runs.
+    This prevents SF refs, phone numbers, and IDs from being matched as specs.
+    """
+    if not text:
+        return text
+
+    # Remove SF reference patterns
+    text = SKIP_SF_REFS.sub("", text)
+
+    # Remove standalone phone number lines
+    lines = text.split("\n")
+    cleaned_lines = []
+    for line in lines:
+        stripped = line.strip()
+        # Skip lines that are purely phone numbers
+        if stripped and re.match(r'^[\+\d\(\)\-\s]{7,}$', stripped):
+            continue
+        cleaned_lines.append(line)
+
+    return "\n".join(cleaned_lines)
+
+
+def _is_false_positive(category: str, raw_match: str, value: str,
+                        unit: str, context: str) -> bool:
+    """
+    Check if an extracted spec is actually a false positive.
+    Returns True if the spec should be rejected.
+    """
+    context_lower = context.lower()
+    value_str = str(value).strip()
+
+    # Reject if the context contains reference/ticket/case words near the value
+    for ref_word in REFERENCE_CONTEXT_WORDS:
+        if ref_word in context_lower:
+            # Check proximity: ref word should be within 50 chars of the value
+            ref_idx = context_lower.find(ref_word)
+            val_idx = context_lower.find(value_str.lower())
+            if ref_idx != -1 and val_idx != -1 and abs(ref_idx - val_idx) < 50:
+                return True
+
+    # Reject standalone numbers with 5+ digits and no unit (likely IDs)
+    if not unit and value_str.isdigit() and len(value_str) >= 5:
+        return True
+
+    # Reject if the raw match looks like a phone number
+    if SKIP_PHONE.search(raw_match):
+        return True
+
+    # Reject PIN/postal codes
+    if SKIP_PIN_CODE.search(context):
+        if value_str.isdigit() and 5 <= len(value_str) <= 6:
+            return True
+
+    return False
+
+
 SUBJECT_KEYWORDS = [
     # General engineering
     "bore", "shaft", "flange", "diameter", "length", "width", "height",
@@ -249,12 +348,17 @@ def extract_specs_regex(
 ) -> List[SpecRecord]:
     """
     Run all regex patterns against the email text and return SpecRecords.
+    Includes pre-filtering to remove SF refs and post-validation to reject
+    false positives like phone numbers, case IDs, and postal codes.
     """
+    # Pre-filter: remove known non-spec patterns before extraction
+    filtered_text = _pre_filter_text(text)
+
     specs = []
     seen_matches = set()  # avoid duplicate matches within the same email
 
     for category, pattern in SPEC_PATTERNS:
-        for match in pattern.finditer(text):
+        for match in pattern.finditer(filtered_text):
             raw = match.group(0).strip()
 
             # Skip if we've already captured this exact match in this email
@@ -273,8 +377,12 @@ def extract_specs_regex(
                 value = raw
                 unit = ""
 
-            context = _get_sentence_context(text, match.start(), match.end())
+            context = _get_sentence_context(filtered_text, match.start(), match.end())
             subject = _extract_subject(context, str(value))
+
+            # Post-extraction validation: reject false positives
+            if _is_false_positive(category, raw, str(value), unit, context):
+                continue
 
             specs.append(SpecRecord(
                 category=category,
