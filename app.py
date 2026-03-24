@@ -47,6 +47,7 @@ st.markdown("""
     /* Global */
     .stApp {
         font-family: 'Inter', sans-serif;
+        background-color: #000000;
     }
     .main .block-container {
         padding-top: 1.5rem;
@@ -55,22 +56,21 @@ st.markdown("""
 
     /* Header */
     .app-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        background: #0a0a0a;
         padding: 2rem 2.5rem;
-        border-radius: 16px;
+        border-radius: 12px;
         margin-bottom: 1.5rem;
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        border: 1px solid #333333;
     }
     .app-header h1 {
-        color: #e2e8f0;
+        color: #ffffff;
         font-size: 2rem;
         margin: 0;
         font-weight: 700;
         letter-spacing: -0.5px;
     }
     .app-header p {
-        color: #94a3b8;
+        color: #a1a1aa;
         font-size: 0.95rem;
         margin: 0.5rem 0 0 0;
     }
@@ -83,69 +83,68 @@ st.markdown("""
         margin: 1.5rem 0;
     }
     .metric-card {
-        background: linear-gradient(135deg, #1e293b, #0f172a);
+        background: #0a0a0a;
         padding: 1.5rem;
         border-radius: 12px;
-        border: 1px solid rgba(99, 102, 241, 0.15);
+        border: 1px solid #333333;
         text-align: center;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: border-color 0.2s;
     }
     .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+        border-color: #555555;
     }
     .metric-card .value {
         font-size: 2.2rem;
         font-weight: 700;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #ffffff;
+        letter-spacing: -0.02em;
     }
     .metric-card .label {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: #a1a1aa;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 0.05em;
         margin-top: 0.3rem;
+        font-weight: 600;
     }
     .metric-card.alert .value {
-        background: linear-gradient(135deg, #ef4444, #f97316);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #ef4444;
     }
 
     /* Summary box */
     .summary-box {
-        background: linear-gradient(135deg, #1e293b, #0f172a);
+        background: #0a0a0a;
         padding: 1.5rem 2rem;
         border-radius: 12px;
-        border-left: 4px solid #6366f1;
+        border-left: 4px solid #ededed;
+        border-top: 1px solid #333333;
+        border-right: 1px solid #333333;
+        border-bottom: 1px solid #333333;
         margin: 1rem 0;
-        color: #cbd5e1;
+        color: #a1a1aa;
         line-height: 1.7;
-        font-size: 0.92rem;
+        font-size: 0.95rem;
     }
     .summary-box h2, .summary-box h3 {
-        color: #e2e8f0 !important;
+        color: #ffffff !important;
         border: none !important;
     }
     .summary-box strong {
-        color: #a5b4fc;
+        color: #ffffff;
+        font-weight: 600;
     }
 
     /* Email thread card */
     .email-card {
-        background: linear-gradient(135deg, #1e293b, #0f172a);
+        background: #0a0a0a;
         padding: 1.25rem 1.5rem;
         border-radius: 12px;
-        border: 1px solid rgba(99, 102, 241, 0.1);
-        margin-bottom: 1rem;
+        border: 1px solid #333333;
+        margin-bottom: 1.5rem;
         transition: border-color 0.2s;
     }
     .email-card:hover {
-        border-color: rgba(99, 102, 241, 0.4);
+        border-color: #555555;
     }
     .email-header {
         display: flex;
@@ -155,21 +154,21 @@ st.markdown("""
     }
     .email-sender {
         font-weight: 600;
-        color: #a5b4fc;
+        color: #ffffff;
         font-size: 0.95rem;
     }
     .email-date {
-        color: #64748b;
+        color: #71717a;
         font-size: 0.8rem;
     }
     .email-subject {
-        color: #e2e8f0;
-        font-size: 0.9rem;
-        font-weight: 500;
+        color: #ededed;
+        font-size: 0.95rem;
+        font-weight: 600;
         margin-bottom: 0.5rem;
     }
     .email-body-preview {
-        color: #94a3b8;
+        color: #a1a1aa;
         font-size: 0.85rem;
         line-height: 1.6;
         white-space: pre-wrap;
@@ -177,88 +176,97 @@ st.markdown("""
         overflow-y: auto;
     }
     .email-recipients {
-        color: #64748b;
+        color: #71717a;
         font-size: 0.78rem;
-        margin-top: 0.5rem;
+        margin-top: 0.75rem;
     }
 
     /* Unresolved items */
     .unresolved-card {
-        background: linear-gradient(135deg, #1e293b, #1a1a2e);
+        background: #0a0a0a;
         padding: 1.25rem 1.5rem;
         border-radius: 12px;
+        border: 1px solid #333333;
         border-left: 4px solid #ef4444;
-        margin-bottom: 0.75rem;
-        color: #cbd5e1;
+        margin-bottom: 1rem;
+        color: #a1a1aa;
     }
     .unresolved-card .person {
-        color: #f87171;
+        color: #ef4444;
         font-weight: 600;
     }
     .unresolved-card .quote {
         font-style: italic;
-        color: #94a3b8;
+        color: #ffffff;
         margin: 0.5rem 0;
     }
     .unresolved-card .meta {
-        color: #64748b;
+        color: #71717a;
         font-size: 0.78rem;
     }
 
     /* Spec highlight */
     mark {
-        background: rgba(99, 102, 241, 0.3);
-        color: #e2e8f0;
-        padding: 1px 4px;
-        border-radius: 3px;
+        background: #1e1e1e;
+        color: #ededed;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 500;
+        border: 1px solid #333333;
     }
 
-    /* Sidebar */
+    /* Sidebar Streamlit Base Theme Override */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f172a, #1e293b);
-    }
-    [data-testid="stSidebar"] .stMarkdown, 
-    [data-testid="stSidebar"] h1, 
-    [data-testid="stSidebar"] h2, 
-    [data-testid="stSidebar"] h3 {
-        color: #e2e8f0;
+        background-color: #0a0a0a !important;
+        border-right: 1px solid #333333 !important;
     }
 
     /* Status indicator */
     .status-badge {
         display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
+        padding: 0.35rem 0.85rem;
+        border-radius: 9999px;
         font-size: 0.75rem;
         font-weight: 600;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.05em;
     }
     .status-ready {
-        background: rgba(34, 197, 94, 0.15);
-        color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.3);
+        background: #111827;
+        color: #10b981;
+        border: 1px solid #1f2937;
     }
     .status-pending {
-        background: rgba(234, 179, 8, 0.15);
-        color: #eab308;
-        border: 1px solid rgba(234, 179, 8, 0.3);
+        background: #1f2937;
+        color: #9ca3af;
+        border: 1px solid #374151;
     }
-    /* Streamlit alert overrides for dark theme */
-    .stAlert {
-        background: linear-gradient(135deg, #1e293b, #0f172a) !important;
-        color: #cbd5e1 !important;
-        border: 1px solid rgba(99, 102, 241, 0.15) !important;
-    }
-    .stAlert > div {
-        color: #cbd5e1 !important;
-    }
+
+    /* Streamlit overrides for clean look */
     div[data-testid="stExpander"] {
-        background: linear-gradient(135deg, #1e293b, #0f172a);
-        border: 1px solid rgba(99, 102, 241, 0.15);
+        background: #0a0a0a;
+        border: 1px solid #333333;
         border-radius: 12px;
     }
     div[data-testid="stExpander"] summary {
-        color: #e2e8f0;
+        color: #ffffff;
+        font-weight: 600;
+    }
+    
+    /* Subtle minimalist button override */
+    .stButton > button {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        transition: opacity 0.2s !important;
+    }
+    .stButton > button:hover {
+        opacity: 0.8 !important;
+    }
+    
+    hr {
+        border-color: #333333 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -668,11 +676,11 @@ if uploaded_files:
                 _dark_layout = dict(
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font_color='#94a3b8',
-                    title_font_color='#e2e8f0',
-                    xaxis=dict(gridcolor='rgba(99,102,241,0.08)'),
-                    yaxis=dict(gridcolor='rgba(99,102,241,0.08)'),
-                    legend=dict(font=dict(color='#94a3b8'))
+                    font_color='#a1a1aa',
+                    title_font_color='#ffffff',
+                    xaxis=dict(gridcolor='#1e1e1e'),
+                    yaxis=dict(gridcolor='#1e1e1e'),
+                    legend=dict(font=dict(color='#a1a1aa'))
                 )
 
                 # Chart 1: Horizontal bar — specs grouped by Subject with labeled values
